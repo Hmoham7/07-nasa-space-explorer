@@ -3,6 +3,7 @@ const startInput = document.getElementById('startDate');
 const endInput = document.getElementById('endDate');
 const getImagesButton = document.querySelector('.filters button');
 const gallery = document.getElementById('gallery');
+const spaceFactText = document.getElementById('spaceFactText');
 const imageModal = document.getElementById('imageModal');
 const modalImage = document.getElementById('modalImage');
 const modalTitle = document.getElementById('modalTitle');
@@ -14,6 +15,17 @@ const closeModalButton = document.getElementById('closeModalButton');
 // NASA APOD endpoint and demo key
 const APOD_URL = 'https://api.nasa.gov/planetary/apod';
 const API_KEY = 'XSzSSA6I3FNXFPN3h8tM2Tp1rOxceI1ujKSgihaz';
+
+// A small list of fun facts shown above the gallery
+const spaceFacts = [
+	'A day on Venus is longer than a year on Venus.',
+	'Neutron stars can spin at more than 600 rotations every second.',
+	'Jupiter is so large that more than 1,300 Earths could fit inside it.',
+	'Saturn could float in water because it is mostly made of gas and has very low density.',
+	'The footprints left on the Moon can last for millions of years because there is no wind there.',
+	'The International Space Station orbits Earth about every 90 minutes.'
+];
+
 let currentGalleryItems = [];
 
 // Call the setupDateInputs function from dateRange.js
@@ -21,6 +33,18 @@ let currentGalleryItems = [];
 // - Default to a range of 9 days (from 9 days ago to today)
 // - Restrict dates to NASA's image archive (starting from 1995)
 setupDateInputs(startInput, endInput);
+
+// Pick one random fact each time the page loads
+function showRandomSpaceFact() {
+	if (!spaceFactText) {
+		return;
+	}
+
+	const randomIndex = Math.floor(Math.random() * spaceFacts.length);
+	spaceFactText.textContent = spaceFacts[randomIndex];
+}
+
+showRandomSpaceFact();
 
 // Show a loading message while API data is being fetched
 function renderLoadingState() {
