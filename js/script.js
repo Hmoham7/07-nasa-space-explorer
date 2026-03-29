@@ -3,10 +3,18 @@ const startInput = document.getElementById('startDate');
 const endInput = document.getElementById('endDate');
 const getImagesButton = document.querySelector('.filters button');
 const gallery = document.getElementById('gallery');
+const imageModal = document.getElementById('imageModal');
+const modalImage = document.getElementById('modalImage');
+const modalTitle = document.getElementById('modalTitle');
+const modalDate = document.getElementById('modalDate');
+const modalExplanation = document.getElementById('modalExplanation');
+const modalMediaMessage = document.getElementById('modalMediaMessage');
+const closeModalButton = document.getElementById('closeModalButton');
 
 // NASA APOD endpoint and demo key
 const APOD_URL = 'https://api.nasa.gov/planetary/apod';
 const API_KEY = 'XSzSSA6I3FNXFPN3h8tM2Tp1rOxceI1ujKSgihaz';
+let currentGalleryItems = [];
 
 // Call the setupDateInputs function from dateRange.js
 // This sets up the date pickers to:
@@ -35,19 +43,61 @@ function renderErrorState(message) {
 }
 
 // Build one gallery card for each APOD entry
-function createGalleryCard(item) {
+function createGalleryCard(item, index) {
 	const mediaTag = item.media_type === 'image'
 		? `<img src="${item.url}" alt="${item.title}" loading="lazy" />`
 		: `<p>This date has a video instead of an image. Open it <a href="${item.url}" target="_blank" rel="noopener noreferrer">here</a>.</p>`;
 
 	return `
-		<article class="gallery-item">
+		<article class="gallery-item" data-index="${index}" role="button" tabindex="0" aria-label="Open details for ${item.title}">
 			${mediaTag}
 			<p><strong>${item.title}</strong></p>
 			<p>${item.date}</p>
 			<p>${item.explanation}</p>
 		</article>
 	`;
+}
+
+// Open modal with larger image and full text details
+function openModal(item) {
+	// 1) Fill text content first
+	modalTitle.textContent = item.title;
+	modalDate.textContent = item.date;
+	modalExplanation.textContent = item.explanation;
+
+	// 2) Check if this APOD item is an image or a video
+	const isImage = item.media_type === 'image';
+
+	if (isImage) {
+		// Use the HD image when available, otherwise use the normal URL
+		const imageUrl = item.hdurl ? item.hdurl : item.url;
+
+		modalImage.src = imageUrl;
+		modalImage.alt = item.title;
+		modalImage.style.display = 'block';
+
+		// Clear any old video message
+		modalMediaMessage.innerHTML = '';
+	} else {
+		// Hide the image area for non-image APOD entries (like videos)
+		modalImage.removeAttribute('src');
+		modalImage.style.display = 'none';
+
+		modalMediaMessage.innerHTML = `This APOD entry is a video. Watch it <a href="${item.url}" target="_blank" rel="noopener noreferrer">here</a>.`;
+	}
+
+	// 3) Show modal and stop page scrolling behind it
+	imageModal.classList.remove('hidden');
+	imageModal.setAttribute('aria-hidden', 'false');
+	document.body.style.overflow = 'hidden';
+}
+
+// Close modal and reset temporary state
+function closeModal() {
+	imageModal.classList.add('hidden');
+	imageModal.setAttribute('aria-hidden', 'true');
+	modalImage.removeAttribute('src');
+	document.body.style.overflow = '';
 }
 
 // Fetch APOD data for a selected date range
@@ -75,7 +125,8 @@ function renderGallery(items) {
 
 	// Show newest items first
 	const sortedItems = [...items].sort((a, b) => b.date.localeCompare(a.date));
-	gallery.innerHTML = sortedItems.map(createGalleryCard).join('');
+	currentGalleryItems = sortedItems;
+	gallery.innerHTML = sortedItems.map((item, index) => createGalleryCard(item, index)).join('');
 }
 
 // Handle button click: validate dates, fetch data, and display cards
@@ -103,3 +154,58 @@ async function handleGetImagesClick() {
 }
 
 getImagesButton.addEventListener('click', handleGetImagesClick);
+
+// Use event delegation so all current and future cards can open the modal
+gallery.addEventListener('click', (event) => {
+	const clickedCard = event.target.closest('.gallery-item');
+
+	if (!clickedCard) {
+		return;
+	}
+
+	const itemIndex = Number(clickedCard.dataset.index);
+	const selectedItem = currentGalleryItems[itemIndex];
+
+	if (!selectedItem) {
+		return;
+	}
+
+	openModal(selectedItem);
+});
+
+// Allow keyboard users to open a card with Enter or Space
+gallery.addEventListener('keydown', (event) => {
+	if (event.key !== 'Enter' && event.key !== ' ') {
+		return;
+	}
+
+	const focusedCard = event.target.closest('.gallery-item');
+
+	if (!focusedCard) {
+		return;
+	}
+
+	event.preventDefault();
+	const itemIndex = Number(focusedCard.dataset.index);
+	const selectedItem = currentGalleryItems[itemIndex];
+
+	if (selectedItem) {
+		openModal(selectedItem);
+	}
+});
+
+closeModalButton.addEventListener('click', closeModal);
+
+// Close when user clicks outside the modal content
+imageModal.addEventListener('click', (event) => {
+	if (event.target === imageModal) {
+		closeModal();
+	}
+});
+
+// Close when user presses Escape
+document.addEventListener('keydown', (event) => {
+	if (event.key === 'Escape' && !imageModal.classList.contains('hidden')) {
+		closeModal();
+	}
+});
