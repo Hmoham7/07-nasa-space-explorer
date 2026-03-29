@@ -14,7 +14,7 @@ const closeModalButton = document.getElementById('closeModalButton');
 
 // NASA APOD endpoint and demo key
 const APOD_URL = 'https://api.nasa.gov/planetary/apod';
-const API_KEY = 'DEMO_KEY';
+const API_KEY = 'dXdcJYoEXNVquuSjza328fVM2hdo8AlazHfIt1Co';
 
 // A small list of fun facts shown above the gallery
 const spaceFacts = [
