@@ -126,12 +126,27 @@ function closeModal() {
 
 // Fetch APOD data for a selected date range
 async function getApodByDateRange(startDate, endDate) {
-	const requestUrl = `${APOD_URL}?api_key=${API_KEY}&start_date=${startDate}&end_date=${endDate}`;
+	// thumbs=true adds thumbnail URLs for video entries
+	const requestUrl = `${APOD_URL}?api_key=${API_KEY}&start_date=${startDate}&end_date=${endDate}&thumbs=true`;
+
+	// Debug: see the exact API URL used for this request
+	console.log('APOD request URL:', requestUrl);
 
 	const response = await fetch(requestUrl);
 
 	if (!response.ok) {
-		throw new Error('NASA API request failed. Please try again.');
+		let nasaErrorMessage = 'NASA API request failed. Please try again.';
+
+		try {
+			const errorData = await response.json();
+			if (errorData && errorData.msg) {
+				nasaErrorMessage = errorData.msg;
+			}
+		} catch (parseError) {
+			// Keep default error message if response is not valid JSON
+		}
+
+		throw new Error(nasaErrorMessage);
 	}
 
 	const data = await response.json();
